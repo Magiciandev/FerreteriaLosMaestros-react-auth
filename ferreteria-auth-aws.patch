@@ -1,0 +1,60 @@
+diff --git a/src/main/java/cl/duoc/ferreteria/auth/config/SecurityConfig.java b/src/main/java/cl/duoc/ferreteria/auth/config/SecurityConfig.java
+index a4a9f5f..3b463e8 100644
+--- a/src/main/java/cl/duoc/ferreteria/auth/config/SecurityConfig.java
++++ b/src/main/java/cl/duoc/ferreteria/auth/config/SecurityConfig.java
+@@ -2,6 +2,7 @@ package cl.duoc.ferreteria.auth.config;
+ 
+ import cl.duoc.ferreteria.auth.security.JwtAuthenticationFilter;
+ import java.util.List;
++import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.context.annotation.*;
+ import org.springframework.http.*;
+ import org.springframework.security.config.Customizer;
+@@ -43,9 +44,10 @@ public class SecurityConfig {
+       .build();
+   }
+ 
+-  @Bean CorsConfigurationSource corsConfigurationSource() {
++  @Bean CorsConfigurationSource corsConfigurationSource(
++      @Value("${app.cors.allowed-origin}") String allowedOrigin) {
+     CorsConfiguration c = new CorsConfiguration();
+-    c.setAllowedOrigins(List.of("http://localhost:5173"));
++    c.setAllowedOrigins(List.of(allowedOrigin));
+     c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+     c.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+diff --git a/src/main/resources/application-prod.properties b/src/main/resources/application-prod.properties
+new file mode 100644
+index 0000000..992176d
+--- /dev/null
++++ b/src/main/resources/application-prod.properties
+@@ -0,0 +1,11 @@
++server.address=127.0.0.1
++server.port=8081
++spring.datasource.url=${AUTH_DB_URL}
++spring.datasource.username=${AUTH_DB_USER}
++spring.datasource.password=${AUTH_DB_PASSWORD}
++spring.jpa.hibernate.ddl-auto=update
++spring.jpa.open-in-view=false
++app.jwt.secret=${JWT_SECRET}
++app.jwt.issuer=ferreteria-auth
++app.jwt.expiration-ms=3600000
++app.cors.allowed-origin=${APP_CORS_ALLOWED_ORIGIN}
+diff --git a/src/main/resources/application.properties b/src/main/resources/application.properties
+index 18aec5f..2637627 100644
+--- a/src/main/resources/application.properties
++++ b/src/main/resources/application.properties
+@@ -14,3 +14,4 @@ app.jwt.secret=${JWT_SECRET:jWtOGcIBniNbHt7a1WKTfqFuGtq+klVT+zyyy7+apOqE+ijKt8oY
+ app.jwt.issuer=ferreteria-auth
+ # Vence a la hora (3600000 ms).
+ app.jwt.expiration-ms=3600000
++app.cors.allowed-origin=${APP_CORS_ALLOWED_ORIGIN:http://localhost:5173}
+diff --git a/src/test/resources/application.properties b/src/test/resources/application.properties
+index bbfc0a1..51674a3 100644
+--- a/src/test/resources/application.properties
++++ b/src/test/resources/application.properties
+@@ -10,3 +10,4 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+ app.jwt.secret=jWtOGcIBniNbHt7a1WKTfqFuGtq+klVT+zyyy7+apOqE+ijKt8oYS2xQ0azJnMRB
+ app.jwt.issuer=ferreteria-auth
+ app.jwt.expiration-ms=3600000
++app.cors.allowed-origin=http://localhost:5173
