@@ -2,7 +2,7 @@
 
 Servicio de autenticación de Ferretería Los Maestros (Spring Boot). Se encarga del inicio de sesión, el registro de clientes, la gestión de usuarios (solo administrador) y de emitir el token JWT que usan el frontend (`ferreteria-front`) y el servicio de la tienda (`ferreteria-back`).
 
-Sigue el contrato de integración del proyecto (puerto **8082**, rutas bajo `/api`, errores como `{ "error": "mensaje" }`).
+Sigue el contrato de integración del proyecto (puerto **8082**, rutas versionadas bajo `/api/v1`, errores como `{ "error": "mensaje" }`).
 
 ## Requisitos
 
@@ -41,18 +41,18 @@ Se crean al arrancar si no existen. La contraseña inicial de ambos es `Cambiar1
 
 | Método y ruta | Acceso | Descripción |
 |---|---|---|
-| `POST /api/auth/login` | público | Recibe `{ correo, password }` y devuelve `{ token, correo, rol }`. Credenciales incorrectas: 401 |
-| `POST /api/auth/registro` | público | Crea un cliente (siempre rol `CLIENTE`). 201 con el usuario, sin contraseña; 409 si el correo o el RUN ya existen |
-| `GET /api/usuarios` | ADMIN | Lista los usuarios |
-| `GET /api/usuarios/{id}` | ADMIN | Un usuario; 404 si no existe |
-| `POST /api/usuarios` | ADMIN | Crea un usuario (201) |
-| `PUT /api/usuarios/{id}` | ADMIN | Edita un usuario; si no se envía `password` se conserva la actual |
-| `DELETE /api/usuarios/{id}` | ADMIN | Elimina (204). No se puede eliminar ni quitar el rol al último administrador (409) |
+| `POST /api/v1/auth/login` | público | Recibe `{ correo, password }` y devuelve `{ token, correo, rol }`. Credenciales incorrectas: 401 |
+| `POST /api/v1/auth/registro` | público | Crea un cliente (siempre rol `CLIENTE`). 201 con el usuario, sin contraseña; 409 si el correo o el RUN ya existen |
+| `GET /api/v1/usuarios` | ADMIN | Lista los usuarios |
+| `GET /api/v1/usuarios/{id}` | ADMIN | Un usuario; 404 si no existe |
+| `POST /api/v1/usuarios` | ADMIN | Crea un usuario (201) |
+| `PUT /api/v1/usuarios/{id}` | ADMIN | Edita un usuario; si no se envía `password` se conserva la actual |
+| `DELETE /api/v1/usuarios/{id}` | ADMIN | Elimina (204). No se puede eliminar ni quitar el rol al último administrador (409) |
 
 Reglas principales:
 
 - **Token:** HS256, emisor `ferreteria-auth`, `sub` = correo, claim `rol`, vence a la hora. Un token inválido o vencido en una ruta pública se ignora (no provoca 401).
-- **Permisos:** sin token o con token inválido, 401; con un rol que no es `ADMIN` en `/api/usuarios`, 403 con `{ "error": "Acceso denegado" }`.
+- **Permisos:** sin token o con token inválido, 401; con un rol que no es `ADMIN` en `/api/v1/usuarios`, 403 con `{ "error": "Acceso denegado" }`.
 - **Cliente:** el rol `CLIENTE` exige RUN válido (con dígito verificador; se guarda como `12345678-5`), tipo de cliente (`particular` o `contratista`), región, comuna y dirección. Para `ADMIN` y `VENDEDOR` esos datos se guardan como `null`.
 - **Contraseña:** de 4 a 72 caracteres; se guarda con BCrypt y nunca se devuelve.
 - **Errores de validación:** 400 con `{ "error": "campo: detalle" }`.

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 // Gestión de usuarios: solo el rol ADMIN (lo exige SecurityConfig).
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/api/v1/usuarios")
 public class UsuarioController {
   private final UsuarioService usuarios;
   public UsuarioController(UsuarioService usuarios) { this.usuarios = usuarios; }

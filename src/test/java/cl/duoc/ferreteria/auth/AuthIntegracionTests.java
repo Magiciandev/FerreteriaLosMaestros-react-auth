@@ -67,7 +67,7 @@ class AuthIntegracionTests {
 
   private String login(String correo, String password) throws Exception {
     String cuerpo = json("correo", txt(correo), "password", txt(password));
-    String texto = respuesta(enviar(post("/api/auth/login"), cuerpo), 200);
+    String texto = respuesta(enviar(post("/api/v1/auth/login"), cuerpo), 200);
     Matcher m = Pattern.compile("\"token\":\"([^\"]+)\"").matcher(texto);
     assertTrue(m.find(), "La respuesta no trae token: " + texto);
     return m.group(1);
@@ -97,7 +97,7 @@ class AuthIntegracionTests {
   @Test
   void loginCorrectoEntregaTokenCorreoYRol() throws Exception {
     String cuerpo = json("correo", txt("admin@profesor.duoc.cl"), "password", txt("Cambiar123!"));
-    String texto = respuesta(enviar(post("/api/auth/login"), cuerpo), 200);
+    String texto = respuesta(enviar(post("/api/v1/auth/login"), cuerpo), 200);
 
     assertTrue(texto.contains("\"correo\":\"admin@profesor.duoc.cl\""));
     assertTrue(texto.contains("\"rol\":\"ADMIN\""));
@@ -113,13 +113,13 @@ class AuthIntegracionTests {
     String claveMala = json("correo", txt("admin@profesor.duoc.cl"), "password", txt("mala"));
     String sinCuenta = json("correo", txt("nadie@gmail.com"), "password", txt("Cambiar123!"));
 
-    assertTrue(respuesta(enviar(post("/api/auth/login"), claveMala), 401).contains("Credenciales inválidas"));
-    assertTrue(respuesta(enviar(post("/api/auth/login"), sinCuenta), 401).contains("Credenciales inválidas"));
+    assertTrue(respuesta(enviar(post("/api/v1/auth/login"), claveMala), 401).contains("Credenciales inválidas"));
+    assertTrue(respuesta(enviar(post("/api/v1/auth/login"), sinCuenta), 401).contains("Credenciales inválidas"));
   }
 
   @Test
   void loginConDatosInvalidosResponde400ConElCampo() throws Exception {
-    String texto = respuesta(enviar(post("/api/auth/login"), json("correo", txt("sin-arroba"), "password", txt("x"))), 400);
+    String texto = respuesta(enviar(post("/api/v1/auth/login"), json("correo", txt("sin-arroba"), "password", txt("x"))), 400);
 
     assertTrue(texto.startsWith("{\"error\":\"correo: "), texto);
   }
@@ -128,14 +128,14 @@ class AuthIntegracionTests {
   void unTokenInvalidoEnUnaRutaPublicaNoImpideElLogin() throws Exception {
     String cuerpo = json("correo", txt("admin@profesor.duoc.cl"), "password", txt("Cambiar123!"));
 
-    respuesta(enviar(post("/api/auth/login"), cuerpo).header("Authorization", "Bearer token-basura"), 200);
+    respuesta(enviar(post("/api/v1/auth/login"), cuerpo).header("Authorization", "Bearer token-basura"), 200);
   }
 
   // ---------- Registro ----------
 
   @Test
   void registroCreaUnClienteSinDevolverLaClaveYPuedeIniciarSesion() throws Exception {
-    String texto = respuesta(enviar(post("/api/auth/registro"), cuerpoRegistro("Ana.Nueva@Gmail.com", "12.345.678-5")), 201);
+    String texto = respuesta(enviar(post("/api/v1/auth/registro"), cuerpoRegistro("Ana.Nueva@Gmail.com", "12.345.678-5")), 201);
 
     assertTrue(texto.contains("\"rol\":\"CLIENTE\""));
     assertTrue(texto.contains("\"run\":\"12345678-5\""));
@@ -146,10 +146,10 @@ class AuthIntegracionTests {
 
   @Test
   void registroRechazaUnCorreoOUnRunRepetidos() throws Exception {
-    respuesta(enviar(post("/api/auth/registro"), cuerpoRegistro("ana@gmail.com", "12345678-5")), 201);
+    respuesta(enviar(post("/api/v1/auth/registro"), cuerpoRegistro("ana@gmail.com", "12345678-5")), 201);
 
-    String correoRepetido = respuesta(enviar(post("/api/auth/registro"), cuerpoRegistro("ana@gmail.com", "10000013-K")), 409);
-    String runRepetido = respuesta(enviar(post("/api/auth/registro"), cuerpoRegistro("otra@gmail.com", "12345678-5")), 409);
+    String correoRepetido = respuesta(enviar(post("/api/v1/auth/registro"), cuerpoRegistro("ana@gmail.com", "10000013-K")), 409);
+    String runRepetido = respuesta(enviar(post("/api/v1/auth/registro"), cuerpoRegistro("otra@gmail.com", "12345678-5")), 409);
 
     assertTrue(correoRepetido.contains("Ya existe una cuenta con el correo ana@gmail.com"));
     assertTrue(runRepetido.contains("Ya existe una cuenta con el RUN 12345678-5"));
@@ -157,8 +157,8 @@ class AuthIntegracionTests {
 
   @Test
   void registroRechazaUnRunInvalidoOCamposFaltantes() throws Exception {
-    String runMalo = respuesta(enviar(post("/api/auth/registro"), cuerpoRegistro("ana@gmail.com", "12345678-9")), 400);
-    String vacio = respuesta(enviar(post("/api/auth/registro"), "{}"), 400);
+    String runMalo = respuesta(enviar(post("/api/v1/auth/registro"), cuerpoRegistro("ana@gmail.com", "12345678-9")), 400);
+    String vacio = respuesta(enviar(post("/api/v1/auth/registro"), "{}"), 400);
 
     assertTrue(runMalo.contains("run: no es un RUN válido"));
     assertTrue(vacio.startsWith("{\"error\":\""));
@@ -168,21 +168,21 @@ class AuthIntegracionTests {
 
   @Test
   void usuariosSinTokenResponde401() throws Exception {
-    respuesta(get("/api/usuarios"), 401);
+    respuesta(get("/api/v1/usuarios"), 401);
   }
 
   @Test
   void usuariosConUnTokenQueNoEsDeAdminResponde403() throws Exception {
     String token = login("vendedor@duoc.cl", "Cambiar123!");
 
-    String texto = respuesta(get("/api/usuarios").header("Authorization", bearer(token)), 403);
+    String texto = respuesta(get("/api/v1/usuarios").header("Authorization", bearer(token)), 403);
 
     assertTrue(texto.contains("Acceso denegado"));
   }
 
   @Test
   void elAdminListaLosUsuariosSinLasClaves() throws Exception {
-    String texto = respuesta(get("/api/usuarios").header("Authorization", bearer(tokenAdmin())), 200);
+    String texto = respuesta(get("/api/v1/usuarios").header("Authorization", bearer(tokenAdmin())), 200);
 
     assertTrue(texto.contains("admin@profesor.duoc.cl"));
     assertTrue(texto.contains("vendedor@duoc.cl"));
@@ -193,8 +193,8 @@ class AuthIntegracionTests {
   void elAdminCreaUnUsuarioDelPersonalYNoSePuedeRepetirElCorreo() throws Exception {
     String token = tokenAdmin();
 
-    String creado = respuesta(enviar(post("/api/usuarios"), cuerpoVendedor("luis@gmail.com")).header("Authorization", bearer(token)), 201);
-    String repetido = respuesta(enviar(post("/api/usuarios"), cuerpoVendedor("LUIS@gmail.com")).header("Authorization", bearer(token)), 409);
+    String creado = respuesta(enviar(post("/api/v1/usuarios"), cuerpoVendedor("luis@gmail.com")).header("Authorization", bearer(token)), 201);
+    String repetido = respuesta(enviar(post("/api/v1/usuarios"), cuerpoVendedor("LUIS@gmail.com")).header("Authorization", bearer(token)), 409);
 
     assertTrue(creado.contains("\"rol\":\"VENDEDOR\""));
     assertTrue(creado.contains("\"run\":null"));
@@ -209,19 +209,19 @@ class AuthIntegracionTests {
     String clienteIncompleto = json("rol", txt("CLIENTE"), "run", txt("12345678-5"), "nombre", txt("Ana"),
         "apellidos", txt("Pérez"), "correo", txt("ana@gmail.com"), "password", txt("clave123"));
 
-    assertTrue(respuesta(enviar(post("/api/usuarios"), sinClave).header("Authorization", bearer(token)), 400).contains("password: es obligatoria"));
-    assertTrue(respuesta(enviar(post("/api/usuarios"), clienteIncompleto).header("Authorization", bearer(token)), 400).contains("tipoCliente: es obligatorio para un cliente"));
+    assertTrue(respuesta(enviar(post("/api/v1/usuarios"), sinClave).header("Authorization", bearer(token)), 400).contains("password: es obligatoria"));
+    assertTrue(respuesta(enviar(post("/api/v1/usuarios"), clienteIncompleto).header("Authorization", bearer(token)), 400).contains("tipoCliente: es obligatorio para un cliente"));
   }
 
   @Test
   void editarUnUsuarioSinEnviarContrasenaConservaLaAnterior() throws Exception {
     String token = tokenAdmin();
-    String creado = respuesta(enviar(post("/api/usuarios"), cuerpoVendedor("luis@gmail.com")).header("Authorization", bearer(token)), 201);
+    String creado = respuesta(enviar(post("/api/v1/usuarios"), cuerpoVendedor("luis@gmail.com")).header("Authorization", bearer(token)), 201);
     Matcher m = Pattern.compile("\"id\":(\\d+)").matcher(creado);
     assertTrue(m.find());
     String cambios = json("rol", txt("VENDEDOR"), "nombre", txt("Luis Alberto"), "apellidos", txt("Rojas"), "correo", txt("luis@gmail.com"));
 
-    String editado = respuesta(enviar(put("/api/usuarios/" + m.group(1)), cambios).header("Authorization", bearer(token)), 200);
+    String editado = respuesta(enviar(put("/api/v1/usuarios/" + m.group(1)), cambios).header("Authorization", bearer(token)), 200);
 
     assertTrue(editado.contains("\"nombre\":\"Luis Alberto\""));
     login("luis@gmail.com", "clave123");
@@ -230,12 +230,12 @@ class AuthIntegracionTests {
   @Test
   void elAdminEliminaUnUsuarioYDespuesNoExiste() throws Exception {
     String token = tokenAdmin();
-    String creado = respuesta(enviar(post("/api/usuarios"), cuerpoVendedor("luis@gmail.com")).header("Authorization", bearer(token)), 201);
+    String creado = respuesta(enviar(post("/api/v1/usuarios"), cuerpoVendedor("luis@gmail.com")).header("Authorization", bearer(token)), 201);
     Matcher m = Pattern.compile("\"id\":(\\d+)").matcher(creado);
     assertTrue(m.find());
 
-    respuesta(delete("/api/usuarios/" + m.group(1)).header("Authorization", bearer(token)), 204);
-    String texto = respuesta(get("/api/usuarios/" + m.group(1)).header("Authorization", bearer(token)), 404);
+    respuesta(delete("/api/v1/usuarios/" + m.group(1)).header("Authorization", bearer(token)), 204);
+    String texto = respuesta(get("/api/v1/usuarios/" + m.group(1)).header("Authorization", bearer(token)), 404);
 
     assertTrue(texto.contains("Usuario no encontrado"));
   }
@@ -246,8 +246,8 @@ class AuthIntegracionTests {
     Long idAdmin = usuarios.findByCorreoIgnoreCase("admin@profesor.duoc.cl").orElseThrow().getId();
     String comoVendedor = json("rol", txt("VENDEDOR"), "nombre", txt("Administrador"), "apellidos", txt("Los Maestros"), "correo", txt("admin@profesor.duoc.cl"));
 
-    assertTrue(respuesta(delete("/api/usuarios/" + idAdmin).header("Authorization", bearer(token)), 409).contains("último administrador"));
-    assertTrue(respuesta(enviar(put("/api/usuarios/" + idAdmin), comoVendedor).header("Authorization", bearer(token)), 409).contains("último administrador"));
+    assertTrue(respuesta(delete("/api/v1/usuarios/" + idAdmin).header("Authorization", bearer(token)), 409).contains("último administrador"));
+    assertTrue(respuesta(enviar(put("/api/v1/usuarios/" + idAdmin), comoVendedor).header("Authorization", bearer(token)), 409).contains("último administrador"));
     assertEquals(1, usuarios.countByRol("ADMIN"));
   }
 
@@ -255,7 +255,7 @@ class AuthIntegracionTests {
 
   @Test
   void elFrontEnLocalhost5173PuedeHacerPeticionesDesdeElNavegador() throws Exception {
-    mvc.perform(options("/api/usuarios")
+    mvc.perform(options("/api/v1/usuarios")
         .header("Origin", "http://localhost:5173")
         .header("Access-Control-Request-Method", "GET")
         .header("Access-Control-Request-Headers", "Authorization"))
